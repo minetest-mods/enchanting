@@ -113,7 +113,7 @@ function enchanting.construct(pos)
 
 	minetest.add_entity({x=pos.x, y=pos.y+0.85, z=pos.z}, "xdecor:book_open")
 	local timer = minetest.get_node_timer(pos)
-	timer:start(15.0)
+	timer:start(5.0)
 end
 
 function enchanting.destruct(pos)
@@ -131,6 +131,27 @@ function enchanting.timer(pos)
 
 	if num == 0 then
 		minetest.add_entity({x=pos.x, y=pos.y+0.85, z=pos.z}, "xdecor:book_open")
+	end
+
+	local minp = {x=pos.x-2, y=pos.y, z=pos.z-2}
+	local maxp = {x=pos.x+2, y=pos.y+1, z=pos.z+2}
+	local bookshelves = minetest.find_nodes_in_area(minp, maxp, "default:bookshelf")
+	if #bookshelves == 0 then return true end
+
+	local bookshelf_pos = bookshelves[math.random(1, #bookshelves)]
+	local x = pos.x - bookshelf_pos.x
+	local y = bookshelf_pos.y - pos.y
+	local z = pos.z - bookshelf_pos.z
+
+	if tostring(x..z):find(2) then
+		minetest.add_particle({
+			pos = bookshelf_pos,
+			velocity = {x=x, y=1.7-y, z=z},
+			acceleration = {x=-0.6, y=-1.5, z=0},
+			expirationtime = 1,
+			size = 2,
+			texture = "glyph"..math.random(1,14)..".png"
+		})
 	end
 	return true
 end
@@ -161,7 +182,15 @@ minetest.register_entity(":xdecor:book_open", {
 	visual_size = {x=0.75, y=0.75},
 	collisionbox = {0},
 	physical = false,
-	textures = {"book_open.png"}
+	textures = {"book_open.png"},
+	on_activate = function(self)
+		local pos = self.object:getpos()
+		local pos_under = {x=pos.x, y=pos.y-1, z=pos.z}
+
+		if minetest.get_node(pos_under).name ~= "xdecor:enchantment_table" then
+			self.object:remove()
+		end
+	end
 })
 
 minetest.register_craft({
